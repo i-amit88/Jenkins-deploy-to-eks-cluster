@@ -3,7 +3,7 @@ pipeline{
         label "Jenkins-Agent"
     }
     tools{
-        jdk 'java17'
+        jdk 'Java17'
         maven 'Maven3'
     }
     stages{
@@ -14,7 +14,7 @@ pipeline{
         }
         stage('Checkout from SCM'){
             steps{
-                git branch: 'main' , credentials: 'github', url:'https://github.com/i-amit88/Jenkins-deploy-to-eks-cluster'
+                git branch: 'main' , credentialsId: 'github', url:'https://github.com/i-amit88/Jenkins-deploy-to-eks-cluster'
 
             }
         }
@@ -23,7 +23,7 @@ pipeline{
                 sh "mvn clean package"
             }
         }
-        stage{
+        stage('Test Application'){
             steps{
                 sh "mvn test"
             }
