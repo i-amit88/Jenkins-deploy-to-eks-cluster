@@ -77,7 +77,7 @@ pipeline{
        }
 
        stage ('Cleanup Artifacts') {
-           steps {
+           steps { // to remove from system the images
                script {
                     sh "docker rmi ${IMAGE_NAME}:${IMAGE_TAG}"
                     sh "docker rmi ${IMAGE_NAME}:latest"
