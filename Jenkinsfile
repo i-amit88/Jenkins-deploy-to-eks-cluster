@@ -6,6 +6,15 @@ pipeline{
         jdk 'Java17'
         maven 'Maven3'
     }
+    environment {
+	        APP_NAME = "register-app-pipeline"
+            RELEASE = "1.0.0"
+            DOCKER_USER = "amit2002"
+            DOCKER_PASS = 'docker-token'
+            IMAGE_NAME = "${DOCKER_USER}" + "/" + "${APP_NAME}"
+            IMAGE_TAG = "${RELEASE}-${BUILD_NUMBER}"
+	        JENKINS_API_TOKEN = credentials("JENKINS_API_TOKEN")
+    }
     stages{
         stage("Cleanup Workspace"){
             steps{
