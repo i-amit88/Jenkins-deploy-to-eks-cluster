@@ -13,7 +13,7 @@ pipeline{
             DOCKER_PASS = 'docker-token'
             IMAGE_NAME = "${DOCKER_USER}" + "/" + "${APP_NAME}"
             IMAGE_TAG = "${RELEASE}-${BUILD_NUMBER}"
-	        //JENKINS_API_TOKEN = credentials("JENKINS_API_TOKEN")
+	    JENKINS_API_TOKEN = credentials("JENKINS_API_TOKEN")
     }
     stages{
         stage("Cleanup Workspace"){
@@ -84,5 +84,13 @@ pipeline{
                }
           }
        }
+	    stage("Trigger CD Pipeline") {
+            		steps {
+                		script {
+                    			sh "curl -v -k --user Amit:${JENKINS_API_TOKEN} -X POST -H 'cache-control: no-cache' -H 'content-type: application/x-www-form-urlencoded' --data 'IMAGE_TAG=${IMAGE_TAG}' 'ec2-54-87-138-23.compute-1.amazonaws.com:8080/job/gitops-argo-cd/buildWithParameters?token=gitops-token'"
+                }
+            }
+       }
+    }
     }
 }
