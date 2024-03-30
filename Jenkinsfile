@@ -16,81 +16,81 @@ pipeline{
 	    JENKINS_API_TOKEN = credentials("JENKINS_API_TOKEN")
     }
     stages{
-        stage("Cleanup Workspace"){
-            steps{
-                cleanWs()
+            stage("Cleanup Workspace"){
+                steps{
+                    cleanWs()
+                }
             }
-        }
-        stage('Checkout from SCM'){
-            steps{
-                git branch: 'main' , credentialsId: 'github', url:'https://github.com/i-amit88/Jenkins-deploy-to-eks-cluster'
+            stage('Checkout from SCM'){
+                steps{
+                    git branch: 'main' , credentialsId: 'github', url:'https://github.com/i-amit88/Jenkins-deploy-to-eks-cluster'
 
+                }
             }
-        }
-        stage("Build Application"){
-            steps{
-                sh "mvn clean package"
+            stage("Build Application"){
+                steps{
+                    sh "mvn clean package"
+                }
             }
-        }
-        stage('Test Application'){
-            steps{
-                sh "mvn test"
+            stage('Test Application'){
+                steps{
+                    sh "mvn test"
+                }
             }
-        }
-        stage('SonarQube Analysis'){
-            steps{
-                script{
-                    withSonarQubeEnv(credentialsId: 'jenkins-sonarqube-token'){
-                        sh "mvn sonar:sonar"
+            stage('SonarQube Analysis'){
+                steps{
+                    script{
+                        withSonarQubeEnv(credentialsId: 'jenkins-sonarqube-token'){
+                            sh "mvn sonar:sonar"
+                        }
                     }
                 }
             }
-        }
-        stage("Quality Gate"){
-           steps {
-               script {
-                    waitForQualityGate abortPipeline: false, credentialsId: 'jenkins-sonarqube-token'
-                }	
-            }
-
-        }
-        stage("Build & Push Docker Image") {
+            stage("Quality Gate"){
             steps {
                 script {
-                    docker.withRegistry('',DOCKER_PASS) {
-                        docker_image = docker.build "${IMAGE_NAME}"
-                    }
+                        waitForQualityGate abortPipeline: false, credentialsId: 'jenkins-sonarqube-token'
+                    }	
+                }
 
-                    docker.withRegistry('',DOCKER_PASS) {
-                        docker_image.push("${IMAGE_TAG}")
-                        docker_image.push('latest')
+            }
+            stage("Build & Push Docker Image") {
+                steps {
+                    script {
+                        docker.withRegistry('',DOCKER_PASS) {
+                            docker_image = docker.build "${IMAGE_NAME}"
+                        }
+
+                        docker.withRegistry('',DOCKER_PASS) {
+                            docker_image.push("${IMAGE_TAG}")
+                            docker_image.push('latest')
+                        }
                     }
                 }
             }
-    }
-	    stage("Trivy Scan") {
-           steps {
-               script {
-	            sh ('docker run -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image amit2002/register-app-pipeline:latest --no-progress --scanners vuln  --exit-code 0 --severity HIGH,CRITICAL --format table')
-               }
-           }
-       }
+            stage("Trivy Scan") {
+                    steps {
+                        script {
+                            sh ('docker run -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image amit2002/register-app-pipeline:latest --no-progress --scanners vuln  --exit-code 0 --severity HIGH,CRITICAL --format table')
+                        }
+                    }
+            }
 
-       stage ('Cleanup Artifacts') {
-           steps { // to remove from system the images
-               script {
-                    sh "docker rmi ${IMAGE_NAME}:${IMAGE_TAG}"
-                    sh "docker rmi ${IMAGE_NAME}:latest"
-               }
-          }
-       }
-	    stage("Trigger CD Pipeline") {
+            stage ('Cleanup Artifacts') {
+                steps { // to remove from system the images
+                    script {
+                            sh "docker rmi ${IMAGE_NAME}:${IMAGE_TAG}"
+                            sh "docker rmi ${IMAGE_NAME}:latest"
+                        }
+                    }
+            }
+	        stage("Trigger CD Pipeline") {
             		steps {
                 		script {
                     			sh "curl -v -k --user Amit:${JENKINS_API_TOKEN} -X POST -H 'cache-control: no-cache' -H 'content-type: application/x-www-form-urlencoded' --data 'IMAGE_TAG=${IMAGE_TAG}' 'ec2-54-87-138-23.compute-1.amazonaws.com:8080/job/gitops-argo-cd/buildWithParameters?token=gitops-token'"
+                            }
+                    }
                 }
-            }
-       }
-    }
-    }
+        }
 }
+
